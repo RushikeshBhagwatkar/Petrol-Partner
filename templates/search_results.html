@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-10 px-4 animate-fade-in">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-2xl md:text-3xl font-display font-bold">
+            {% if from_city and to_city %}{{ from_city }} → {{ to_city }}{% else %}Search Rides{% endif %}
+        </h1>
+        <p class="text-gray-500">
+            {% if date %}{{ date }} • {% endif %}{{ rides|length }} ride{{ 's' if rides|length != 1 }} available
+            {% if pink_mode %}<span class="text-pink-500 font-medium">• 🩷 Pink Mode</span>{% endif %}
+        </p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Filters Sidebar -->
+        <div class="lg:col-span-1">
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm sticky top-20">
+                <h3 class="font-bold text-sm uppercase text-gray-400 mb-4">Filters</h3>
+                <form action="/search" method="GET" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 mb-1 block">From</label>
+                        <input type="text" name="from" value="{{ from_city }}" list="city-list" class="w-full p-2.5 bg-surface-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-fuel-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 mb-1 block">To</label>
+                        <input type="text" name="to" value="{{ to_city }}" list="city-list" class="w-full p-2.5 bg-surface-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-fuel-500 outline-none">
+                    </div>
+                    <datalist id="city-list">
+                        {% for city in cities %}<option value="{{ city }}">{% endfor %}
+                    </datalist>
+                    <div>
+                        <label class="text-xs font-semibold text-gray-600 mb-1 block">Date</label>
+                        <input type="date" name="date" value="{{ date }}" class="w-full p-2.5 bg-surface-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-fuel-500 outline-none">
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" name="pink_mode" id="filter-pink" {{ 'checked' if pink_mode }} class="w-4 h-4 text-pink-500 rounded focus:ring-pink-500">
+                        <label for="filter-pink" class="text-sm text-gray-600">🩷 Pink Mode Only</label>
+                    </div>
+                    <button type="submit" class="w-full bg-fuel-500 text-white font-semibold py-2.5 rounded-lg hover:bg-fuel-600 transition text-sm">Apply Filters</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="lg:col-span-3">
+            {% if rides %}
+            <div class="space-y-4">
+                {% for ride in rides %}
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-fuel-200 transition-all card-hover" id="ride-card-{{ ride.id }}">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <!-- Left: Route & Driver -->
+                        <div class="flex items-start space-x-4 flex-1">
+                            <div class="flex flex-col items-center pt-1">
+                                <span class="text-lg font-bold text-gray-800">{{ ride.time }}</span>
+                                <div class="w-0.5 h-6 bg-gradient-to-b from-fuel-400 to-petrol-400 my-1 rounded-full"></div>
+                                <span class="text-xs text-gray-400">ETA</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-bold text-lg text-gray-800">{{ ride.from_city }} → {{ ride.to_city }}</p>
+                                <div class="flex flex-wrap items-center gap-2 mt-2">
+                                    <span class="bg-fuel-50 text-fuel-700 px-2.5 py-0.5 rounded-md text-xs font-bold">{{ ride.seats_left }} seat{{ 's' if ride.seats_left != 1 }} left</span>
+                                    {% if ride.is_pink_mode %}<span class="bg-pink-50 text-pink-600 px-2.5 py-0.5 rounded-md text-xs font-bold">🩷 Pink</span>{% endif %}
+                                    {% if ride.meeting_hub %}<span class="bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-md text-xs font-bold">📍 {{ ride.meeting_hub }}</span>{% endif %}
+                                    <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-md text-xs font-bold">✅ Non-Profit</span>
+                                </div>
+                                <div class="flex items-center space-x-2 mt-3">
+                                    <img src="{{ ride.driver_photo or 'https://ui-avatars.com/api/?name=' + ride.driver_name + '&background=10B981&color=fff&size=32' }}" class="w-6 h-6 rounded-full" alt="" loading="lazy">
+                                    <span class="text-sm text-gray-600">{{ ride.driver_name }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Price & Book -->
+                        <div class="flex items-center justify-between md:flex-col md:items-end gap-2">
+                            <div class="text-right">
+                                <span class="text-2xl font-extrabold text-gray-900">₹{{ ride.get('price_per_seat', 0)|int }}</span>
+                                <p class="text-xs text-gray-400">per seat • {{ ride.get('distance_km', 0) }}km</p>
+                            </div>
+                            {% if not session.get('user') %}
+                                <a href="/login" class="bg-surface-100 text-gray-700 px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-surface-200 transition">
+                                    Login to Book
+                                </a>
+                            {% elif session['user']['uid'] == ride.driver_id %}
+                                <span class="text-xs text-petrol-500 font-semibold bg-petrol-50 px-3 py-1 rounded-full">Your Ride</span>
+                            {% else %}
+                                <button onclick="bookRide('{{ ride.id }}')" class="bg-gradient-to-r from-fuel-500 to-fuel-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-fuel-500/25 transition transform hover:scale-[1.02] active:scale-95">
+                                    Book Seat
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Cost Transparency -->
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex flex-wrap gap-4 text-xs text-gray-400">
+                        <span>⛽ Fuel: ₹{{ ride.fuel_cost|default(0)|int }}</span>
+                        <span>🛣️ Tolls: ₹{{ ride.toll_cost|default(0)|int }}</span>
+                        <span>📊 Recovery: {{ ride.cost_recovery_percent|default(0) }}%</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-white p-16 rounded-3xl text-center border border-dashed border-gray-300">
+                <div class="text-5xl mb-4">🔍</div>
+                <p class="text-gray-500 text-lg mb-2">No rides found</p>
+                <p class="text-gray-400 text-sm mb-6">Try another date, route, or disable Pink Mode filter.</p>
+                <a href="/" class="inline-block bg-fuel-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-fuel-600 transition">Back to Search</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function bookRide(rideId) {
+    if (!confirm('Submit booking request? The driver must approve your request before you can join.')) return;
+    try {
+        const res = await fetch('/api/book/' + rideId, { method: 'POST', headers: {'Content-Type':'application/json'} });
+        const result = await res.json();
+        if (result.status === 'success') {
+            showToast('Request submitted! Wait for driver approval.', 'success');
+            setTimeout(() => window.location.href = '/dashboard', 2000);
+        } else {
+            if (res.status === 401) {
+                showToast('Please login to book a ride.', 'warning');
+                setTimeout(() => window.location.href = '/login', 1500);
+            } else if (res.status === 403) {
+                showToast(result.message, 'warning');
+                setTimeout(() => window.location.href = '/verify', 2000);
+            } else {
+                showToast(result.message || 'Booking failed', 'error');
+            }
+        }
+    } catch(e) { showToast('An error occurred.', 'error'); }
+}
+</script>
+{% endblock %}

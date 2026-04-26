@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative overflow-hidden bg-gradient-to-br from-surface-900 via-surface-900 to-petrol-900 text-white">
+    <!-- Animated background orbs -->
+    <div class="absolute top-20 left-10 w-72 h-72 bg-fuel-500/20 rounded-full blur-3xl animate-float"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-petrol-500/15 rounded-full blur-3xl animate-float" style="animation-delay: 3s;"></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 py-20 md:py-32">
+        <div class="text-center max-w-3xl mx-auto animate-slide-up">
+            <div class="inline-flex items-center space-x-2 bg-white/10 px-4 py-1.5 rounded-full text-sm font-medium mb-6 border border-white/10">
+                <span class="w-2 h-2 bg-fuel-400 rounded-full animate-pulse"></span>
+                <span>India's First Legally Compliant Carpooling</span>
+            </div>
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-display font-extrabold leading-tight mb-6">
+                Split <span class="gradient-text">Fuel Costs</span>,<br>Not Profits.
+            </h1>
+            <p class="text-lg md:text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                Non-profit rides with triple-verified co-travellers. Legal protection for private vehicles. 
+                Pay only the <strong class="text-fuel-400">true running cost</strong> — fuel + tolls, nothing more.
+            </p>
+        </div>
+
+        <!-- Search Card -->
+        <div class="max-w-4xl mx-auto animate-slide-up" style="animation-delay: 0.2s;">
+            <div class="glass-dark rounded-3xl p-6 md:p-8 shadow-2xl">
+                <form action="/search" method="GET" id="hero-search-form">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label class="text-xs text-gray-400 font-medium mb-1.5 block">FROM</label>
+                            <input type="text" name="from" list="city-list" placeholder="Leaving from..." required class="w-full p-3.5 bg-white/10 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-fuel-500 outline-none transition placeholder:text-gray-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 font-medium mb-1.5 block">TO</label>
+                            <input type="text" name="to" list="city-list" placeholder="Going to..." required class="w-full p-3.5 bg-white/10 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-fuel-500 outline-none transition placeholder:text-gray-500">
+                        </div>
+                        <datalist id="city-list">
+                            {% for city in cities %}<option value="{{ city }}">{% endfor %}
+                        </datalist>
+                        <div>
+                            <label class="text-xs text-gray-400 font-medium mb-1.5 block">DATE</label>
+                            <input type="date" name="date" required id="hero-date" class="w-full p-3.5 bg-white/10 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-fuel-500 outline-none transition">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" id="hero-search-btn" class="w-full bg-gradient-to-r from-fuel-500 to-fuel-600 text-white font-bold py-3.5 px-6 rounded-xl hover:shadow-lg hover:shadow-fuel-500/30 transition-all transform hover:scale-[1.02] active:scale-95">
+                                🔍 Search Rides
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Pink Mode Toggle -->
+                    <div class="flex items-center space-x-3 mt-2">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="pink_mode" class="sr-only peer" id="hero-pink-toggle">
+                            <div class="w-9 h-5 bg-white/20 rounded-full peer peer-checked:bg-pink-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+                        </label>
+                        <span class="text-sm text-gray-400">🩷 <strong class="text-pink-400">Pink Mode</strong> — Women-only rides</span>
+                    </div>
+                </form>
+
+                <!-- Live Cost Preview -->
+                <div id="cost-preview" class="hidden mt-5 p-4 bg-fuel-500/10 border border-fuel-500/20 rounded-xl">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-fuel-300">Estimated cost per seat</span>
+                        <span id="cost-preview-amount" class="text-2xl font-bold text-fuel-400">₹---</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Legal-Guard™ capped at fuel + tolls only</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="py-20 px-4 bg-white">
+    <div class="max-w-6xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-display font-bold text-center mb-4">How <span class="gradient-text">Petrol Partner</span> Works</h2>
+        <p class="text-gray-500 text-center mb-14 max-w-xl mx-auto">Three steps to legal, safe, affordable intercity travel</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center p-8 rounded-3xl border border-gray-100 card-hover bg-white">
+                <div class="w-16 h-16 bg-fuel-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                    <span class="text-3xl">🔍</span>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Search & Match</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">Find rides on your route. Meet at AI-suggested hubs — no detours, maximum punctuality.</p>
+            </div>
+            <div class="text-center p-8 rounded-3xl border border-gray-100 card-hover bg-white">
+                <div class="w-16 h-16 bg-petrol-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                    <span class="text-3xl">🛡️</span>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Triple-Verified Trust</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">Every rider verified via Aadhaar face-match, corporate email, and LinkedIn. Zero anonymous rides.</p>
+            </div>
+            <div class="text-center p-8 rounded-3xl border border-gray-100 card-hover bg-white">
+                <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                    <span class="text-3xl">💳</span>
+                </div>
+                <h3 class="text-xl font-bold mb-3">UPI Split & Go</h3>
+                <p class="text-gray-500 text-sm leading-relaxed">Pay only fuel + tolls via GPay/PhonePe. Instant UPI splitting upon trip completion.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Safety Badges -->
+<section class="py-20 px-4 bg-surface-50">
+    <div class="max-w-6xl mx-auto">
+        <h2 class="text-3xl md:text-4xl font-display font-bold text-center mb-14">Why India <span class="gradient-text">Trusts Us</span></h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex items-start space-x-5 p-6 bg-white rounded-2xl border border-gray-100 card-hover">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
+                    <span class="text-2xl">⚖️</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">Legal-Guard™ Price Engine</h3>
+                    <p class="text-gray-500 text-sm">Prices auto-capped at fuel + tolls. Your white-plate vehicle stays 100% legal. No ₹10,000 fines.</p>
+                </div>
+            </div>
+            <div class="flex items-start space-x-5 p-6 bg-white rounded-2xl border border-gray-100 card-hover">
+                <div class="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center shrink-0">
+                    <span class="text-2xl">🩷</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">Pink Mode + SOS Shield</h3>
+                    <p class="text-gray-500 text-sm">Women-only rides with verified female drivers. Last-Mile SOS pings location to 3 emergency contacts instantly.</p>
+                </div>
+            </div>
+            <div class="flex items-start space-x-5 p-6 bg-white rounded-2xl border border-gray-100 card-hover">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                    <span class="text-2xl">🏢</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">Corporate & Campus Pools</h3>
+                    <p class="text-gray-500 text-sm">Verified corporate/university email ensures you ride with colleagues and peers. IT park carpooling made easy.</p>
+                </div>
+            </div>
+            <div class="flex items-start space-x-5 p-6 bg-white rounded-2xl border border-gray-100 card-hover">
+                <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                    <span class="text-2xl">📍</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-1">Smart Meeting Hubs</h3>
+                    <p class="text-gray-500 text-sm">Meet at Metro stations, toll plazas, or bus stands. Zero detours for the driver, maximum convenience for you.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Routes -->
+<section class="py-20 px-4 bg-white">
+    <div class="max-w-6xl mx-auto">
+        <h2 class="text-3xl font-display font-bold text-center mb-12">Popular Routes</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% set routes = [
+                ('Mumbai', 'Pune', 149, 400),
+                ('Delhi', 'Jaipur', 281, 680),
+                ('Bengaluru', 'Chennai', 346, 750),
+                ('Pune', 'Nagpur', 720, 1450),
+                ('Mumbai', 'Nashik', 167, 420),
+                ('Hyderabad', 'Bengaluru', 570, 1100),
+            ] %}
+            {% for from_c, to_c, dist, price in routes %}
+            <a href="/search?from={{ from_c }}&to={{ to_c }}" class="group p-5 bg-surface-50 rounded-2xl border border-gray-100 hover:border-fuel-300 transition-all card-hover" id="route-{{ from_c|lower }}-{{ to_c|lower }}">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-lg text-gray-800 group-hover:text-fuel-700 transition">{{ from_c }} → {{ to_c }}</p>
+                        <p class="text-sm text-gray-400 mt-1">{{ dist }} km • From ₹{{ price }}/seat</p>
+                    </div>
+                    <div class="w-10 h-10 bg-fuel-100 rounded-full flex items-center justify-center group-hover:bg-fuel-500 transition">
+                        <svg class="w-4 h-4 text-fuel-600 group-hover:text-white transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-20 px-4">
+    <div class="max-w-5xl mx-auto">
+        <div class="bg-gradient-to-br from-fuel-600 to-petrol-700 rounded-3xl p-10 md:p-16 text-white text-center relative overflow-hidden shadow-2xl">
+            <div class="absolute -top-24 -right-24 w-72 h-72 bg-white/10 rounded-full"></div>
+            <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-white/5 rounded-full"></div>
+            <div class="relative z-10">
+                <h2 class="text-3xl md:text-5xl font-display font-bold mb-5">Driving somewhere?</h2>
+                <p class="text-xl opacity-90 mb-8 max-w-lg mx-auto">Share your ride, recover fuel costs legally, and make travel sustainable.</p>
+                <a href="/post-ride" class="inline-block bg-white text-fuel-700 px-10 py-4 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-xl transform hover:scale-105" id="cta-post-ride">
+                    Post a Ride — It's Free
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='cost_engine.js') }}"></script>
+<script>
+// Set min date to today
+document.getElementById('hero-date').min = new Date().toISOString().split('T')[0];
+
+// Live cost preview
+const fromEl = document.getElementById('hero-from');
+const toEl = document.getElementById('hero-to');
+const preview = document.getElementById('cost-preview');
+const previewAmt = document.getElementById('cost-preview-amount');
+
+async function updatePreview() {
+    const from = fromEl.value;
+    const to = toEl.value;
+    if (!from || !to || from === to) { preview.classList.add('hidden'); return; }
+    try {
+        const res = await fetch('/api/calculate-cost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from_city: from, to_city: to, seats: 3, fuel_type: 'petrol' })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            previewAmt.textContent = '₹' + Math.round(data.pricing.max_price_per_seat);
+            preview.classList.remove('hidden');
+        }
+    } catch(e) { preview.classList.add('hidden'); }
+}
+fromEl.addEventListener('change', updatePreview);
+toEl.addEventListener('change', updatePreview);
+</script>
+{% endblock %}

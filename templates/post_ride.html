@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-10 px-4 animate-fade-in">
+    <div class="mb-8">
+        <h1 class="text-3xl font-display font-bold mb-2">Post a Ride</h1>
+        <p class="text-gray-500">Share your trip, recover fuel costs legally. Price auto-capped by Legal-Guard™.</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="flex items-center justify-center mb-10">
+        <div class="flex items-center space-x-4">
+            <div id="step-ind-1" class="flex items-center space-x-2"><div class="w-8 h-8 bg-fuel-500 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div><span class="text-sm font-medium text-fuel-700 hidden sm:inline">Route</span></div>
+            <div class="w-8 h-px bg-gray-300"></div>
+            <div id="step-ind-2" class="flex items-center space-x-2"><div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-bold">2</div><span class="text-sm font-medium text-gray-400 hidden sm:inline">Details</span></div>
+            <div class="w-8 h-px bg-gray-300"></div>
+            <div id="step-ind-3" class="flex items-center space-x-2"><div class="w-8 h-8 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-sm font-bold">3</div><span class="text-sm font-medium text-gray-400 hidden sm:inline">Review</span></div>
+        </div>
+    </div>
+
+    <form id="post-ride-form">
+        <!-- Step 1: Route -->
+        <div id="step-1" class="bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-gray-100">
+            <h2 class="text-xl font-bold mb-6">📍 Route Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 mb-1.5 block">From City</label>
+                    <input type="text" name="from_city" id="pr-from" list="city-list" placeholder="Origin city" required class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 mb-1.5 block">To City</label>
+                    <input type="text" name="to_city" id="pr-to" list="city-list" placeholder="Destination city" required class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition">
+                </div>
+                <datalist id="city-list">
+                    {% for city in cities %}<option value="{{ city }}">{% endfor %}
+                </datalist>
+            </div>
+            <!-- Meeting Hubs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Pick-up Hub</label>
+                    <select name="meeting_hub" id="pr-hub" class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition">
+                        <option value="">Select origin first...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Drop-off Hub</label>
+                    <select name="dropoff_hub" id="pr-hub-drop" class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition">
+                        <option value="">Select destination first...</option>
+                    </select>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">AI-suggested hubs to minimize detours</p>
+            <div class="flex justify-end mt-6">
+                <button type="button" onclick="goStep(2)" class="bg-gradient-to-r from-fuel-500 to-fuel-600 text-white font-bold py-3 px-8 rounded-xl hover:shadow-lg transition transform hover:scale-[1.02] active:scale-95">
+                    Next →
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Details -->
+        <div id="step-2" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-gray-100">
+            <h2 class="text-xl font-bold mb-6">🚗 Trip Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div><label class="text-sm font-semibold text-gray-700 mb-1.5 block">Date</label><input type="date" name="date" id="pr-date" required class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition"></div>
+                <div><label class="text-sm font-semibold text-gray-700 mb-1.5 block">Time</label><input type="time" name="time" id="pr-time" required class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
+                <div><label class="text-sm font-semibold text-gray-700 mb-1.5 block">Seats Available</label><input type="number" name="total_seats" id="pr-seats" min="1" max="6" value="3" required class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition"></div>
+                <div><label class="text-sm font-semibold text-gray-700 mb-1.5 block">Fuel Type</label><select name="fuel_type" id="pr-fuel" class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition"><option value="petrol">Petrol</option><option value="diesel">Diesel</option><option value="cng">CNG</option></select></div>
+                <div><label class="text-sm font-semibold text-gray-700 mb-1.5 block">Mileage (km/L)</label><input type="number" name="vehicle_mileage" id="pr-mileage" placeholder="e.g. 15" step="0.5" class="w-full p-3.5 bg-surface-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-fuel-500 outline-none transition"></div>
+            </div>
+            <!-- Pink Mode -->
+            <div class="mt-6 p-4 bg-pink-50 rounded-xl border border-pink-100 flex items-center justify-between">
+                <div><p class="font-semibold text-pink-700">🩷 Pink Mode</p><p class="text-xs text-pink-500">Only visible to verified female riders</p></div>
+                <label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" name="is_pink_mode" id="pr-pink" class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-pink-500 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div></label>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goStep(1)" class="text-gray-500 font-semibold py-3 px-6 rounded-xl hover:bg-surface-100 transition">← Back</button>
+                <button type="button" onclick="goStep(3)" class="bg-gradient-to-r from-fuel-500 to-fuel-600 text-white font-bold py-3 px-8 rounded-xl hover:shadow-lg transition transform hover:scale-[1.02] active:scale-95">Next →</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Review -->
+        <div id="step-3" class="hidden bg-white p-6 md:p-8 rounded-3xl shadow-lg border border-gray-100">
+            <h2 class="text-xl font-bold mb-6">⚖️ Legal-Guard™ Cost Review</h2>
+            <div id="cost-breakdown" class="space-y-3 mb-6">
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Route</span><span id="rev-route" class="font-semibold">—</span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Distance</span><span id="rev-distance" class="font-semibold">— km</span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Fuel Cost</span><span id="rev-fuel" class="font-semibold">₹—</span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Toll Cost</span><span id="rev-toll" class="font-semibold">₹—</span></div>
+                <hr class="border-dashed">
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Total Running Cost</span><span id="rev-total" class="font-bold text-lg">₹—</span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Seats Offered</span><span id="rev-seats" class="font-semibold">—</span></div>
+                <hr>
+                <div class="flex justify-between items-center p-4 bg-fuel-50 rounded-xl border border-fuel-200">
+                    <div><p class="font-bold text-fuel-800">Max Price per Seat</p><p class="text-xs text-fuel-600">Legal non-profit cap</p></div>
+                    <span id="rev-price" class="text-3xl font-extrabold text-fuel-700">₹—</span>
+                </div>
+                <div class="p-3 bg-green-50 rounded-xl border border-green-200 text-center">
+                    <p class="text-sm text-green-700 font-medium">✅ Compliant — Ride is legally non-profit</p>
+                </div>
+            </div>
+            <div class="flex justify-between mt-6">
+                <button type="button" onclick="goStep(2)" class="text-gray-500 font-semibold py-3 px-6 rounded-xl hover:bg-surface-100 transition">← Back</button>
+                <button type="submit" id="publish-btn" class="bg-gradient-to-r from-fuel-500 to-petrol-600 text-white font-bold py-3 px-10 rounded-xl hover:shadow-lg hover:shadow-fuel-500/25 transition transform hover:scale-[1.02] active:scale-95">
+                    ✅ Publish Ride
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='cost_engine.js') }}"></script>
+<script>
+const hubData = {{ hubs | tojson }};
+
+// Set min date
+document.getElementById('pr-date').min = new Date().toISOString().split('T')[0];
+
+// Step navigation
+function goStep(n) {
+    [1,2,3].forEach(i => {
+        document.getElementById('step-'+i).classList.toggle('hidden', i !== n);
+        const ind = document.getElementById('step-ind-'+i).querySelector('div');
+        if (i <= n) { ind.classList.remove('bg-gray-200','text-gray-500'); ind.classList.add('bg-fuel-500','text-white'); }
+        else { ind.classList.remove('bg-fuel-500','text-white'); ind.classList.add('bg-gray-200','text-gray-500'); }
+    });
+    if (n === 3) calculateReview();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// Load hubs
+document.getElementById('pr-from').addEventListener('change', function() {
+    const city = this.value;
+    const hubSelect = document.getElementById('pr-hub');
+    const cityHubs = hubData[city] || [];
+    hubSelect.innerHTML = '<option value="">No specific hub</option>';
+    cityHubs.forEach(h => { hubSelect.innerHTML += `<option value="${h.name}">${h.name} (${h.type})</option>`; });
+});
+document.getElementById('pr-to').addEventListener('change', function() {
+    const city = this.value;
+    const hubSelect = document.getElementById('pr-hub-drop');
+    const cityHubs = hubData[city] || [];
+    hubSelect.innerHTML = '<option value="">No specific hub</option>';
+    cityHubs.forEach(h => { hubSelect.innerHTML += `<option value="${h.name}">${h.name} (${h.type})</option>`; });
+});
+
+// Calculate & show review
+async function calculateReview() {
+    const from = document.getElementById('pr-from').value;
+    const to = document.getElementById('pr-to').value;
+    const seats = parseInt(document.getElementById('pr-seats').value) || 3;
+    const fuelType = document.getElementById('pr-fuel').value;
+    const mileage = parseFloat(document.getElementById('pr-mileage').value) || 0;
+    document.getElementById('rev-route').textContent = from + ' → ' + to;
+    try {
+        const res = await fetch('/api/calculate-cost', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({from_city: from, to_city: to, seats, fuel_type: fuelType, vehicle_mileage: mileage})
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            const p = data.pricing;
+            document.getElementById('rev-distance').textContent = p.distance_km + ' km';
+            document.getElementById('rev-fuel').textContent = '₹' + p.fuel_cost;
+            document.getElementById('rev-toll').textContent = '₹' + p.toll_cost;
+            document.getElementById('rev-total').textContent = '₹' + p.total_cost;
+            document.getElementById('rev-seats').textContent = p.seats_offered;
+            document.getElementById('rev-price').textContent = '₹' + Math.round(p.max_price_per_seat);
+        }
+    } catch(e) { console.error(e); }
+}
+
+// Submit
+document.getElementById('post-ride-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('publish-btn');
+    btn.disabled = true; btn.textContent = 'Publishing...';
+    const data = {
+        from_city: document.getElementById('pr-from').value,
+        to_city: document.getElementById('pr-to').value,
+        date: document.getElementById('pr-date').value,
+        time: document.getElementById('pr-time').value,
+        total_seats: document.getElementById('pr-seats').value,
+        fuel_type: document.getElementById('pr-fuel').value,
+        vehicle_mileage: document.getElementById('pr-mileage').value || '0',
+        meeting_hub: document.getElementById('pr-hub').value,
+        dropoff_hub: document.getElementById('pr-hub-drop').value,
+        is_pink_mode: document.getElementById('pr-pink').checked,
+    };
+    try {
+        const res = await fetch('/api/post-ride', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const result = await res.json();
+        if (result.status === 'success') {
+            showToast('Ride published successfully!', 'success');
+            setTimeout(() => window.location.href = '/dashboard', 1500);
+        } else { showToast(result.message, 'error'); btn.disabled = false; btn.textContent = '✅ Publish Ride'; }
+    } catch(e) { showToast('Failed to publish ride.', 'error'); btn.disabled = false; btn.textContent = '✅ Publish Ride'; }
+});
+</script>
+{% endblock %}

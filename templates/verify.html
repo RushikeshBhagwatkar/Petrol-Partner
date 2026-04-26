@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto py-10 px-4 animate-fade-in">
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-display font-bold mb-2">Triple-Verification Hub</h1>
+        <p class="text-gray-500">Complete all 3 steps to get the <span class="text-fuel-600 font-semibold">Fully Verified</span> badge.</p>
+        
+        <div class="mt-4 inline-flex items-center space-x-2 bg-gray-100 p-1 rounded-lg">
+            <button onclick="adminSimulate()" class="text-[10px] font-bold text-gray-500 hover:text-fuel-600 uppercase tracking-tighter px-2 py-1">
+                🛠️ Admin Simulate
+            </button>
+        </div>
+
+        <div class="flex justify-center mt-4 space-x-2">
+            {% for i in range(3) %}
+            <div class="w-10 h-1.5 rounded-full {{ 'bg-fuel-500' if i < profile.get('verification_level', 0) else 'bg-gray-200' }}"></div>
+            {% endfor %}
+        </div>
+        <p class="text-sm text-gray-400 mt-2">Level {{ profile.get('verification_level', 0) }}/3</p>
+    </div>
+
+    <div class="space-y-5">
+        <!-- Step 1: Aadhaar -->
+        <div class="bg-white p-6 rounded-2xl border {{ 'border-green-200 bg-green-50/50' if profile.get('aadhaar_status')=='verified' else 'border-gray-100' }} shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 {{ 'bg-green-100' if profile.get('aadhaar_status')=='verified' else 'bg-amber-100' }} rounded-xl flex items-center justify-center shrink-0">
+                        <span class="text-2xl">{{ '✅' if profile.get('aadhaar_status')=='verified' else '🪪' }}</span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Aadhaar / Govt ID</h3>
+                        <p class="text-sm text-gray-500 mt-1">Face-match verification with government ID. Ensures real identity.</p>
+                    </div>
+                </div>
+                {% if profile.get('aadhaar_status')=='verified' %}
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">VERIFIED</span>
+                {% endif %}
+            </div>
+            {% if profile.get('aadhaar_status') != 'verified' %}
+            <div class="mt-4 p-4 bg-surface-50 rounded-xl">
+                <p class="text-xs text-gray-400 mb-3">Upload a photo of your Aadhaar card + a selfie for face-match.</p>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:border-fuel-400 transition" onclick="document.getElementById('aadhaar-file').click()">
+                        <span class="text-2xl">📄</span><p class="text-xs text-gray-400 mt-1">Aadhaar Card</p>
+                        <input type="file" id="aadhaar-file" accept="image/*" class="hidden">
+                    </div>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:border-fuel-400 transition" onclick="document.getElementById('selfie-file').click()">
+                        <span class="text-2xl">🤳</span><p class="text-xs text-gray-400 mt-1">Live Selfie</p>
+                        <input type="file" id="selfie-file" accept="image/*" capture="user" class="hidden">
+                    </div>
+                </div>
+                <button onclick="verifyAadhaar()" class="w-full bg-fuel-500 text-white font-semibold py-2.5 rounded-xl hover:bg-fuel-600 transition text-sm">Verify Identity</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Step 2: Corporate Email -->
+        <div class="bg-white p-6 rounded-2xl border {{ 'border-green-200 bg-green-50/50' if profile.get('corp_email_verified') else 'border-gray-100' }} shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 {{ 'bg-green-100' if profile.get('corp_email_verified') else 'bg-blue-100' }} rounded-xl flex items-center justify-center shrink-0">
+                        <span class="text-2xl">{{ '✅' if profile.get('corp_email_verified') else '🏢' }}</span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">Corporate / University Email</h3>
+                        <p class="text-sm text-gray-500 mt-1">Verify your work or college email to join trusted pools.</p>
+                        {% if profile.get('corp_email_verified') %}<p class="text-xs text-fuel-600 font-medium mt-1">{{ profile.get('corp_email','') }}</p>{% endif %}
+                    </div>
+                </div>
+                {% if profile.get('corp_email_verified') %}
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">VERIFIED</span>
+                {% endif %}
+            </div>
+            {% if not profile.get('corp_email_verified') %}
+            <div class="mt-4 flex space-x-2">
+                <input type="email" id="corp-email-input" placeholder="you@company.com" class="flex-1 p-3 bg-surface-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-fuel-500">
+                <button onclick="verifyCorp()" class="bg-petrol-500 text-white px-5 rounded-xl font-semibold text-sm hover:bg-petrol-600 transition">Verify</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Step 3: LinkedIn -->
+        <div class="bg-white p-6 rounded-2xl border {{ 'border-green-200 bg-green-50/50' if profile.get('linkedin_url') else 'border-gray-100' }} shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="flex items-start space-x-4">
+                    <div class="w-12 h-12 {{ 'bg-green-100' if profile.get('linkedin_url') else 'bg-blue-100' }} rounded-xl flex items-center justify-center shrink-0">
+                        <span class="text-2xl">{{ '✅' if profile.get('linkedin_url') else '💼' }}</span>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-lg">LinkedIn Profile</h3>
+                        <p class="text-sm text-gray-500 mt-1">Link your LinkedIn to build professional trust.</p>
+                        {% if profile.get('linkedin_url') %}<a href="{{ profile.linkedin_url }}" target="_blank" class="text-xs text-petrol-600 hover:underline mt-1 inline-block">View Profile →</a>{% endif %}
+                    </div>
+                </div>
+                {% if profile.get('linkedin_url') %}
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">LINKED</span>
+                {% endif %}
+            </div>
+            {% if not profile.get('linkedin_url') %}
+            <div class="mt-4 flex space-x-2">
+                <input type="url" id="linkedin-input" placeholder="https://linkedin.com/in/yourname" class="flex-1 p-3 bg-surface-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-fuel-500">
+                <button onclick="verifyLinkedIn()" class="bg-blue-600 text-white px-5 rounded-xl font-semibold text-sm hover:bg-blue-700 transition">Link</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function verifyAadhaar(){
+    if(!confirm('Demo: Simulate Aadhaar face-match verification?'))return;
+    try{const r=await fetch('/api/verify/aadhaar',{method:'POST',headers:{'Content-Type':'application/json'}});const d=await r.json();if(d.status==='success'){showToast(d.message,'success');setTimeout(()=>location.reload(),1000);}else showToast(d.message,'error');}catch(e){showToast('Error','error');}
+}
+async function verifyCorp(){
+    const email=document.getElementById('corp-email-input').value.trim();
+    if(!email)return showToast('Enter email','error');
+    try{const r=await fetch('/api/verify/corp-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({corp_email:email})});const d=await r.json();if(d.status==='success'){showToast(d.message,'success');setTimeout(()=>location.reload(),1000);}else showToast(d.message,'error');}catch(e){showToast('Error','error');}
+}
+async function verifyLinkedIn(){
+    const url=document.getElementById('linkedin-input').value.trim();
+    if(!url)return showToast('Enter LinkedIn URL','error');
+    try{const r=await fetch('/api/verify/linkedin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({linkedin_url:url})});const d=await r.json();if(d.status==='success'){showToast(d.message,'success');setTimeout(()=>location.reload(),1000);}else showToast(d.message,'error');}catch(e){showToast('Error','error');}
+}
+async function adminSimulate(){
+    try{const r=await fetch(`/api/admin/verify-user/{{ session.user.uid }}`,{method:'POST'});const d=await r.json();if(d.status==='success'){showToast(d.message,'success');setTimeout(()=>location.reload(),1000);}else showToast(d.message,'error');}catch(e){showToast('Error','error');}
+}
+</script>
+{% endblock %}

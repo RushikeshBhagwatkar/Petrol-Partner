@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* CSS Shielding: Deterrence & Privacy */
+    .document-viewer {
+        user-select: none;
+        -webkit-user-drag: none;
+        pointer-events: none; /* Prevents right-click and selection */
+    }
+
+    @media print {
+        body { visibility: hidden; }
+        .no-print { display: none; }
+    }
+
+    #watermark-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0.3;
+    }
+
+    .secure-blur {
+        filter: blur(20px);
+        transition: filter 0.3s ease;
+    }
+</style>
+
+<div class="max-w-2xl mx-auto py-10 px-4">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">Passenger Verification</h1>
+            <p class="text-sm text-gray-500">Verify identity for: <span class="font-bold text-gray-800">{{ passenger.name }}</span></p>
+        </div>
+        <div class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+            🔒 SECURE VIEW
+        </div>
+    </div>
+
+    <div class="bg-surface-900 rounded-3xl p-4 shadow-2xl relative overflow-hidden" id="viewer-container">
+        <!-- The ID Document -->
+        <div class="relative rounded-2xl overflow-hidden bg-black aspect-[3/2] flex items-center justify-center">
+            <img id="id-doc" src="{{ id_doc_url }}" class="document-viewer w-full h-full object-cover" alt="Verification Document">
+            
+            <!-- Dynamic Watermark Overlay (Canvas) -->
+            <canvas id="watermark-canvas"></canvas>
+        </div>
+
+        <div class="mt-6 p-4 bg-white/5 rounded-xl border border-white/10 text-white">
+            <div class="flex items-center space-x-3 mb-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-400">Driver Audit Log</p>
+            </div>
+            <p class="text-sm">Viewing as: <span class="text-fuel-400 font-mono">{{ session.user.name }}</span></p>
+            <p class="text-xs text-gray-500 mt-1">IP Address: {{ driver_ip }} • Timestamp: {{ current_year }}-04-26</p>
+        </div>
+    </div>
+
+    <div class="mt-8 space-y-4 no-print">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <p class="text-sm text-blue-700 leading-relaxed">
+                <strong>Industry Standard (2026):</strong> Visual ID audit is mandatory for non-profit carpooling. Ensure the person matches the photo on the document. This document link expires in 60 seconds.
+            </p>
+        </div>
+        
+        <div class="flex space-x-3">
+            <button onclick="window.history.back()" class="flex-1 bg-white border border-gray-200 py-3 rounded-xl font-bold text-gray-700 hover:bg-gray-50 transition">
+                Done, Back to Trip
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('watermark-canvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('viewer-container');
+    const idDoc = document.getElementById('id-doc');
+
+    function resizeCanvas() {
+        canvas.width = idDoc.clientWidth;
+        canvas.height = idDoc.clientHeight;
+        drawWatermark();
+    }
+
+    function drawWatermark() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.rotate(-Math.PI / 4);
+        ctx.font = 'bold 20px monospace';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        
+        const text = '{{ session.user.name }} - {{ driver_ip }} - CONFIDENTIAL';
+        for (let i = -10; i < 10; i++) {
+            for (let j = -10; j < 10; j++) {
+                ctx.fillText(text, i * 400, j * 100);
+            }
+        }
+        ctx.restore();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    idDoc.onload = resizeCanvas;
+
+    // Ephemeral Deterrence: Blur on window blur (Prevents screenshotting by switching apps)
+    window.addEventListener('blur', () => {
+        idDoc.classList.add('secure-blur');
+    });
+    window.addEventListener('focus', () => {
+        idDoc.classList.remove('secure-blur');
+    });
+
+    // Detect PrintScreen (Deterrence only)
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'PrintScreen') {
+            idDoc.classList.add('secure-blur');
+            alert('Screenshot detected. This action has been logged for security audit.');
+            setTimeout(() => idDoc.classList.remove('secure-blur'), 2000);
+        }
+    });
+
+    // Disable context menu
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+</script>
+{% endblock %}

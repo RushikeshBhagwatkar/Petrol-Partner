@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-10 px-4 animate-fade-in">
+    <!-- Profile Header -->
+    <div class="bg-gradient-to-r from-fuel-600 to-petrol-700 rounded-3xl p-6 md:p-8 text-white mb-8 relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-48 h-48 bg-white/10 rounded-full"></div>
+        <div class="relative z-10 flex items-center space-x-5">
+            <img src="{{ session['user']['photo_url'] or 'https://ui-avatars.com/api/?name=' + session['user']['name'] + '&background=059669&color=fff&size=80' }}" class="w-16 h-16 rounded-2xl border-2 border-white/30 object-cover" alt="Profile">
+            <div>
+                <h1 class="text-2xl font-display font-bold">{{ session['user']['name'] }}</h1>
+                <p class="text-white/70 text-sm">{{ session['user']['email'] }}</p>
+                <div class="flex items-center space-x-2 mt-2">
+                    {% if profile.get('aadhaar_status') == 'verified' %}<span class="bg-white/20 text-xs px-2 py-0.5 rounded-full">✅ Aadhaar</span>{% endif %}
+                    {% if profile.get('corp_email_verified') %}<span class="bg-white/20 text-xs px-2 py-0.5 rounded-full">🏢 Corp</span>{% endif %}
+                    {% if profile.get('linkedin_url') %}<span class="bg-white/20 text-xs px-2 py-0.5 rounded-full">💼 LinkedIn</span>{% endif %}
+                    <span class="bg-white/20 text-xs px-2 py-0.5 rounded-full">⭐ {{ profile.get('rating', 5.0) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex space-x-1 bg-surface-100 p-1 rounded-xl mb-8 overflow-x-auto">
+        <button onclick="switchTab('rides')" id="tab-rides" class="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold bg-white text-fuel-700 shadow-sm transition whitespace-nowrap">My Rides</button>
+        <button onclick="switchTab('requests')" id="tab-requests" class="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-500 hover:text-gray-700 transition whitespace-nowrap">Requests {% if booking_requests %}<span class="bg-red-500 text-white text-[10px] px-1.5 rounded-full">{{ booking_requests|length }}</span>{% endif %}</button>
+        <button onclick="switchTab('bookings')" id="tab-bookings" class="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-500 hover:text-gray-700 transition whitespace-nowrap">Bookings</button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-500 hover:text-gray-700 transition whitespace-nowrap">Settings</button>
+    </div>
+
+    <!-- Tab: My Rides -->
+    <div id="panel-rides">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">Rides I'm Driving</h2>
+            <a href="/post-ride" class="bg-fuel-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-fuel-600 transition">+ Post Ride</a>
+        </div>
+        {% if my_rides %}
+        <div class="space-y-3">
+            {% for r in my_rides %}
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold text-lg">{{ r.get('from_city', 'Unknown') }} → {{ r.get('to_city', 'Unknown') }}</p>
+                        <p class="text-sm text-gray-500">{{ r.get('date', 'N/A') }} • {{ r.get('time', 'N/A') }} • {{ r.get('seats_left', 0) }}/{{ r.get('total_seats', 0) }} seats left</p>
+                        {% if r.get('meeting_hub') %}<p class="text-xs text-amber-600 mt-1">📍 {{ r.get('meeting_hub') }}</p>{% endif %}
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xl font-extrabold text-fuel-700">₹{{ r.get('price_per_seat', 0)|int }}</span>
+                        <p class="text-xs text-gray-400">/seat</p>
+                        <a href="/live-trip/{{ r.id }}" class="text-xs text-petrol-600 font-semibold hover:underline mt-1 inline-block">View Trip →</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-surface-50 p-10 rounded-2xl text-center border border-dashed border-gray-300">
+            <p class="text-gray-400 mb-3">You haven't posted any rides yet.</p>
+            <a href="/post-ride" class="text-fuel-600 font-semibold hover:underline">Post your first ride →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab: Requests -->
+    <div id="panel-requests" class="hidden">
+        <h2 class="text-xl font-bold mb-6">Booking Requests</h2>
+        {% if booking_requests %}
+        <div class="space-y-4">
+            {% for req in booking_requests %}
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="{{ req.passenger_photo or 'https://ui-avatars.com/api/?name=' + req.passenger_name + '&background=059669&color=fff' }}" class="w-12 h-12 rounded-xl" alt="">
+                    <div>
+                        <p class="font-bold">{{ req.passenger_name }}</p>
+                        <p class="text-xs text-gray-500">Wants to join your ride to {{ req.ride_id[:8] }}...</p>
+                        <p class="text-xs text-fuel-600 font-semibold mt-1">Status: Pending Verification Hub Review</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="handleRequest('{{ req.id }}', 'approve')" class="bg-fuel-500 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-fuel-600 transition">Approve</button>
+                    <button onclick="handleRequest('{{ req.id }}', 'reject')" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition">Reject</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-surface-50 p-10 rounded-2xl text-center border border-dashed border-gray-300">
+            <p class="text-gray-400">No pending requests.</p>
+        </div>
+        {% endif %}
+    </div>
+    <div id="panel-bookings" class="hidden">
+        <h2 class="text-xl font-bold mb-6">My Bookings</h2>
+        {% if bookings %}
+        <div class="space-y-3">
+            {% for b in bookings %}
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div class="flex justify-between items-start">
+                    <div>
+                        {% if b.ride %}
+                        <p class="font-bold">{{ b.ride.from_city }} → {{ b.ride.to_city }}</p>
+                        <p class="text-sm text-gray-500">{{ b.ride.date }} • {{ b.ride.time }}</p>
+                        {% else %}
+                        <p class="font-bold text-gray-400">Ride details unavailable</p>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-col items-end space-y-1">
+                        <span class="bg-{{ 'green' if b.status == 'confirmed' else 'yellow' }}-100 text-{{ 'green' if b.status == 'confirmed' else 'yellow' }}-700 px-3 py-0.5 rounded-full text-xs font-bold uppercase">{{ b.status }}</span>
+                        {% if b.ride %}<span class="text-lg font-bold">₹{{ b.amount_due|default(0)|int }}</span>{% endif %}
+                        {% if b.status == 'confirmed' and b.ride %}
+                        <a href="/live-trip/{{ b.ride_id }}" class="text-xs text-petrol-600 font-semibold hover:underline">View Trip →</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-surface-50 p-10 rounded-2xl text-center border border-dashed border-gray-300">
+            <p class="text-gray-400 mb-3">No bookings yet.</p>
+            <a href="/search" class="text-fuel-600 font-semibold hover:underline">Find a ride →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab: Settings -->
+    <div id="panel-settings" class="hidden">
+        <h2 class="text-xl font-bold mb-6">Profile Settings</h2>
+        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
+            <div>
+                <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Gender</label>
+                <select id="set-gender" class="w-full p-3 bg-surface-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-fuel-500">
+                    <option value="">Select</option>
+                    <option value="male" {{ 'selected' if profile.get('gender')=='male' }}>Male</option>
+                    <option value="female" {{ 'selected' if profile.get('gender')=='female' }}>Female</option>
+                    <option value="other" {{ 'selected' if profile.get('gender')=='other' }}>Other</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Phone Number</label>
+                <input type="tel" id="set-phone" value="{{ profile.get('phone','') }}" placeholder="+91 9876543210" class="w-full p-3 bg-surface-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-fuel-500">
+            </div>
+            <div>
+                <label class="text-sm font-semibold text-gray-700 mb-1.5 block">UPI ID (for receiving payments)</label>
+                <input type="text" id="set-upi" value="{{ profile.get('upi_id','') }}" placeholder="yourname@upi" class="w-full p-3 bg-surface-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-fuel-500">
+            </div>
+            <!-- Emergency Contacts -->
+            <div>
+                <label class="text-sm font-semibold text-gray-700 mb-1.5 block">Emergency Contacts (for SOS)</label>
+                <div id="emergency-list" class="space-y-2 mb-2">
+                    {% for c in profile.get('emergency_contacts', []) %}
+                    <div class="flex items-center space-x-2 text-sm bg-red-50 px-3 py-2 rounded-lg"><span>🆘</span><span>{{ c.name }} — {{ c.phone }}</span></div>
+                    {% endfor %}
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="ec-name" placeholder="Contact name" class="p-2.5 bg-surface-50 border border-gray-200 rounded-lg text-sm outline-none">
+                    <div class="flex space-x-2">
+                        <input type="tel" id="ec-phone" placeholder="Phone" class="flex-1 p-2.5 bg-surface-50 border border-gray-200 rounded-lg text-sm outline-none">
+                        <button onclick="addEmergencyContact()" class="bg-red-500 text-white px-3 rounded-lg text-sm font-bold hover:bg-red-600 transition">+</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="saveSettings()" class="bg-fuel-500 text-white font-semibold py-3 px-8 rounded-xl hover:bg-fuel-600 transition">Save Changes</button>
+        </div>
+
+        <!-- Verification Quick Link -->
+        <a href="/verify" class="mt-6 block bg-amber-50 p-5 rounded-2xl border border-amber-200 hover:border-amber-300 transition">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-2xl">🛡️</span>
+                    <div><p class="font-bold text-amber-800">Complete Verification</p><p class="text-xs text-amber-600">Level {{ profile.get('verification_level', 0) }}/3 — Get all badges</p></div>
+                </div>
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+        </a>
+    </div>
+</div>
+
+<script>
+let emergencyContacts = {{ profile.get('emergency_contacts', []) | tojson }};
+
+function switchTab(tab) {
+    ['rides','requests','bookings','settings'].forEach(t => {
+        document.getElementById('panel-'+t).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById('tab-'+t);
+        if (t === tab) { btn.classList.add('bg-white','text-fuel-700','shadow-sm'); btn.classList.remove('text-gray-500'); }
+        else { btn.classList.remove('bg-white','text-fuel-700','shadow-sm'); btn.classList.add('text-gray-500'); }
+    });
+}
+
+async function handleRequest(id, action) {
+    if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+    try {
+        const res = await fetch(`/api/book/${id}/action`, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({action})
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'success'); setTimeout(() => location.reload(), 1000); }
+        else showToast(data.message, 'error');
+    } catch(e) { showToast('Error processing request', 'error'); }
+}
+
+function addEmergencyContact() {
+    const name = document.getElementById('ec-name').value.trim();
+    const phone = document.getElementById('ec-phone').value.trim();
+    if (!name || !phone) return showToast('Enter name and phone', 'error');
+    if (emergencyContacts.length >= 3) return showToast('Max 3 contacts', 'error');
+    emergencyContacts.push({name, phone});
+    const list = document.getElementById('emergency-list');
+    list.innerHTML += `<div class="flex items-center space-x-2 text-sm bg-red-50 px-3 py-2 rounded-lg"><span>🆘</span><span>${name} — ${phone}</span></div>`;
+    document.getElementById('ec-name').value = '';
+    document.getElementById('ec-phone').value = '';
+}
+
+async function saveSettings() {
+    try {
+        const res = await fetch('/api/profile/update', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+                gender: document.getElementById('set-gender').value,
+                phone: document.getElementById('set-phone').value,
+                upi_id: document.getElementById('set-upi').value,
+                emergency_contacts: emergencyContacts,
+            })
+        });
+        const data = await res.json();
+        if (data.status === 'success') showToast('Settings saved!', 'success');
+        else showToast(data.message, 'error');
+    } catch(e) { showToast('Failed to save.', 'error'); }
+}
+</script>
+{% endblock %}

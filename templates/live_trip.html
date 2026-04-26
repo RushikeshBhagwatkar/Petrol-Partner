@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-2xl mx-auto py-10 px-4 animate-fade-in">
+    <div class="bg-gradient-to-br from-surface-900 to-petrol-900 rounded-3xl p-6 text-white mb-6 relative overflow-hidden">
+        <div class="absolute -top-16 -right-16 w-40 h-40 bg-fuel-500/15 rounded-full blur-2xl"></div>
+        <div class="relative z-10">
+            <div class="flex items-center space-x-2 mb-4"><span class="w-2.5 h-2.5 bg-fuel-400 rounded-full animate-pulse"></span><span class="text-sm font-medium text-fuel-300">Live Trip</span></div>
+            <h1 class="text-2xl font-display font-bold mb-2">{{ ride.get('from_city','—') }} → {{ ride.get('to_city','—') }}</h1>
+            <div class="flex flex-wrap gap-3 text-sm text-gray-300 mb-4"><span>📅 {{ ride.get('date','—') }}</span><span>🕐 {{ ride.get('time','—') }}</span>{% if ride.get('meeting_hub') %}<span>📍 {{ ride.meeting_hub }}</span>{% endif %}</div>
+            <div class="flex items-center space-x-3 p-3 bg-white/10 rounded-xl">
+                <img src="{{ ride.get('driver_photo','') or 'https://ui-avatars.com/api/?name=D&background=059669&color=fff' }}" class="w-10 h-10 rounded-xl" alt="">
+                <div><p class="font-semibold text-sm">{{ ride.get('driver_name','Driver') }}</p><p class="text-xs text-gray-400">Driver</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6">
+        <h3 class="font-bold text-sm uppercase text-gray-400 mb-3">Cost Breakdown</h3>
+        <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-gray-500">Distance</span><span class="font-semibold">{{ ride.get('distance_km',0) }} km</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Fuel</span><span class="font-semibold">₹{{ ride.get('fuel_cost',0)|int }}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Tolls</span><span class="font-semibold">₹{{ ride.get('toll_cost',0)|int }}</span></div>
+            <hr><div class="flex justify-between items-center"><span class="font-bold">Total Recovery</span><span class="text-2xl font-extrabold text-fuel-700">₹{{ ride.get('price_per_seat',0)|int }}</span></div>
+        </div>
+    </div>
+
+    {% if is_driver %}
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6">
+        <h3 class="font-bold text-sm uppercase text-gray-400 mb-3">Driver Controls</h3>
+        <div id="driver-actions" class="space-y-3">
+            {% if ride.get('status', 'scheduled') == 'scheduled' %}
+            <button onclick="updateStatus('arrived')" class="w-full bg-fuel-500 text-white font-bold py-3 rounded-xl hover:bg-fuel-600 transition">
+                🚩 I've Arrived at Pickup
+            </button>
+            {% elif ride.get('status') == 'arrived' %}
+            <button onclick="updateStatus('started')" class="w-full bg-petrol-600 text-white font-bold py-3 rounded-xl hover:bg-petrol-700 transition">
+                🚗 Start Ride
+            </button>
+            {% else %}
+            <button onclick="updateStatus('completed')" class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-black transition">
+                🏁 Complete Ride
+            </button>
+            {% endif %}
+        </div>
+
+        <div class="mt-6">
+            <h4 class="text-xs font-bold text-gray-400 uppercase mb-3">Verify Passengers</h4>
+            <div class="space-y-3">
+                {% for b in passenger_bookings %}
+                <div class="flex items-center justify-between p-3 bg-surface-50 rounded-xl border border-gray-100">
+                    <div class="flex items-center space-x-3">
+                        <img src="{{ b.passenger_photo or 'https://ui-avatars.com/api/?name=' + b.passenger_name }}" class="w-8 h-8 rounded-lg">
+                        <span class="text-sm font-semibold">{{ b.passenger_name }}</span>
+                    </div>
+                    <a href="/ride/verify-passenger/{{ b.id }}" class="text-xs font-bold text-fuel-600 hover:underline">
+                        Verify ID →
+                    </a>
+                </div>
+                {% endfor %}
+                {% if not passenger_bookings %}
+                <p class="text-xs text-gray-400 text-center py-2">No confirmed passengers yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if booking %}
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6">
+        <h3 class="font-bold text-sm uppercase text-gray-400 mb-3">💳 Pay via UPI</h3>
+        {% if booking.get('upi_payment_status') == 'completed' %}
+        <div class="p-4 bg-green-50 rounded-xl border border-green-200 text-center"><p class="text-green-700 font-bold">✅ Payment Done</p></div>
+        {% else %}
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <button onclick="openUPI('gpay')" class="p-3 border-2 border-gray-200 rounded-xl hover:border-fuel-400 hover:bg-fuel-50 transition font-semibold text-sm">📱 Google Pay</button>
+            <button onclick="openUPI('phonepe')" class="p-3 border-2 border-gray-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition font-semibold text-sm">📱 PhonePe</button>
+        </div>
+        <div class="flex space-x-2"><input type="text" id="upi-txn-id" placeholder="UPI Txn ID" class="flex-1 p-2.5 bg-surface-50 border border-gray-200 rounded-lg text-sm outline-none"><button onclick="confirmPayment()" class="bg-fuel-500 text-white px-4 rounded-lg text-sm font-bold">Confirm</button></div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="fixed bottom-20 md:bottom-8 left-0 right-0 flex justify-center z-30 pointer-events-none">
+        <button onclick="triggerSOSAction()" class="pointer-events-auto bg-red-600 text-white font-bold py-4 px-10 rounded-full shadow-2xl sos-pulse hover:bg-red-700 transition text-lg">🆘 SOS Emergency</button>
+    </div>
+    <div id="sos-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-black/60" onclick="closeSOS()"></div>
+        <div class="relative bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-slide-up">
+            <div class="text-5xl mb-4">🆘</div><h3 class="text-xl font-bold mb-2 text-red-600">Trigger SOS?</h3>
+            <p class="text-gray-500 text-sm mb-4">Location sent to emergency contacts.</p>
+            <div id="sos-countdown" class="text-4xl font-bold text-red-600 mb-4">5</div>
+            <div class="flex space-x-3"><button onclick="closeSOS()" class="flex-1 py-3 border-2 border-gray-200 rounded-xl font-semibold">Cancel</button><button onclick="sendSOS()" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold">Send NOW</button></div>
+        </div>
+    </div>
+</div>
+<script>
+const rideId='{{ ride.get("id","") }}', bookingId='{{ booking.get("id","") }}', pricePerSeat={{ ride.get('price_per_seat',0) }};
+let sosTimer=null;
+const driverUpi='{{ ride.get("driver_profile", {}).get("upi_id", "") }}';
+function openUPI(p){const payee=driverUpi||'driver@upi';const l=`upi://pay?pa=${payee}&pn=PetrolPartner&am=${pricePerSeat}&cu=INR&tn=PP-${rideId.substring(0,8)}`;window.location.href=l;}
+async function confirmPayment(){const t=document.getElementById('upi-txn-id').value.trim();if(!t)return showToast('Enter Txn ID','error');try{const r=await fetch('/api/upi/confirm',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({booking_id:bookingId,upi_transaction_id:t})});const d=await r.json();if(d.status==='success'){showToast('Payment recorded!','success');setTimeout(()=>location.reload(),1000);}else showToast(d.message,'error');}catch(e){showToast('Error','error');}}
+async function updateStatus(s){try{const r=await fetch(`/api/ride/${rideId}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:s})});const d=await r.json();if(d.status==='success'){showToast(`Status updated to ${s}`,'success');setTimeout(()=>location.reload(),1000);}else showToast(d.message,'error');}catch(e){showToast('Error updating status','error');}}
+function triggerSOSAction(){document.getElementById('sos-modal').classList.remove('hidden');let c=5;document.getElementById('sos-countdown').textContent=c;sosTimer=setInterval(()=>{c--;document.getElementById('sos-countdown').textContent=c;if(c<=0){clearInterval(sosTimer);sendSOS();}},1000);}
+function closeSOS(){if(sosTimer)clearInterval(sosTimer);document.getElementById('sos-modal').classList.add('hidden');}
+async function sendSOS(){if(sosTimer)clearInterval(sosTimer);try{const p=await new Promise((r,j)=>navigator.geolocation.getCurrentPosition(r,j,{timeout:5000}));await fetch('/api/sos/trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ride_id:rideId,latitude:p.coords.latitude,longitude:p.coords.longitude})});showToast('🆘 SOS Sent!','success');}catch(e){await fetch('/api/sos/trigger',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ride_id:rideId,latitude:0,longitude:0})});showToast('🆘 SOS Sent (no GPS)','success');}closeSOS();}
+</script>
+{% endblock %}
