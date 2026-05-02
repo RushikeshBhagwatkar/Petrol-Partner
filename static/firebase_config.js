@@ -1,14 +1,14 @@
 // PETROL PARTNER — Firebase Configuration
 // Public-facing keys for client SDK (safe to expose)
 const firebaseConfig = {
-  apiKey: "AIzaSyAW_sTKr-EXuzFswZDB-N4UyHia6jV7jh0",
-  authDomain: "maharide-7a362.firebaseapp.com",
-  projectId: "maharide-7a362",
-  storageBucket: "maharide-7a362.firebasestorage.app",
-  messagingSenderId: "466345031115",
-  appId: "1:466345031115:web:f69382b296a4505057324e",
-  measurementId: "G-9SLSX4G3H1"
-};
+    apiKey: "AIzaSyAhd3rBNzZyu-i0pTbJ3OntQTCwooThu4Q",
+    authDomain: "petrolpartner-e3a04.firebaseapp.com",
+    projectId: "petrolpartner-e3a04",
+    storageBucket: "petrolpartner-e3a04.firebasestorage.app",
+    messagingSenderId: "742650115372",
+    appId: "1:742650115372:web:b838b1f1a275f79a966889",
+    measurementId: "G-B6QNZX9B22"
+  };
 
 // Initialize Firebase
 if (!firebase.apps.length) {
