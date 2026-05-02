@@ -5,6 +5,7 @@ Uses Firebase Admin SDK + Firestore for auth and data.
 """
 import os
 import uuid
+import json
 from datetime import datetime
 from functools import wraps
 
@@ -35,13 +36,33 @@ csrf = CSRFProtect(app)
 
 # ── Firebase Init ──────────────────────────────────────────
 firebase_cred_path = Config.FIREBASE_SERVICE_ACCOUNT_JSON
-if os.path.exists(firebase_cred_path):
-    cred = credentials.Certificate(firebase_cred_path)
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    print("[OK] Firebase & Firestore connected.")
-else:
-    print("[WARN] Firebase service account key not found. Firestore will not work.")
+
+print(f"[DEBUG] Attempting to initialize Firebase...")
+print(f"[DEBUG] Config value length: {len(firebase_cred_path)}")
+print(f"[DEBUG] Config value starts with: {repr(firebase_cred_path[:20])}")
+
+try:
+    # Aggressively strip whitespace and accidental quotes from Render UI
+    cleaned_cred = firebase_cred_path.strip().strip("'").strip('"').strip()
+    
+    if "service_account" in cleaned_cred:
+        print("[DEBUG] Detected JSON content. Attempting to parse...")
+        cred_dict = json.loads(cleaned_cred)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        print("[OK] Firebase & Firestore connected via JSON string.")
+    elif os.path.exists(cleaned_cred):
+        print(f"[DEBUG] Detected file path: {cleaned_cred}")
+        cred = credentials.Certificate(cleaned_cred)
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        print("[OK] Firebase & Firestore connected via file.")
+    else:
+        print("[WARN] Firebase service account key not found (neither valid JSON nor existing file). Firestore will not work.")
+        db = None
+except Exception as e:
+    print(f"[ERROR] Failed to initialize Firebase. Exception: {str(e)}")
     db = None
 
 # ── Jinja Context ──────────────────────────────────────────
